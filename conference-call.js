@@ -1,4 +1,5 @@
 import {LitElement, html, css} from 'lit-element';
+import '@jmonster/video-grid';
 
 export class ConferenceCall extends LitElement {
   static get styles() {
@@ -7,8 +8,6 @@ export class ConferenceCall extends LitElement {
         display: flex;
         justify-content: space-between;
       }
-
-      video { width: 240px; }
     `;
   }
 
@@ -196,14 +195,20 @@ export class ConferenceCall extends LitElement {
       channel.addEventListener('close', () => console.debug(remotePeerId, 'close'))
     });
 
-    rtcpc.addEventListener('negotiationneeded', async () => {
-      console.debug('negotiationneeded')
+    //
+    // This approach does NOT work with Safari
+    // or else you encounter this error when the wrong caller/order occures:
+    // > InvalidAccessError: Failed to set remote answer sdp: Failed to apply the description for 0: Failed to set SSL role for the transport.
+    // Chrome, of course, works fine.
+    //
+    // rtcpc.addEventListener('negotiationneeded', async () => {
+    //   console.debug('negotiationneeded')
 
-      // create and send local offer
-      const offer = await rtcpc.createOffer()
-      await rtcpc.setLocalDescription(offer)
-      this.signaler.emit('signal', remotePeerId, {offer})
-    })
+    //   // create and send local offer
+    //   const offer = await rtcpc.createOffer()
+    //   await rtcpc.setLocalDescription(offer)
+    //   this.signaler.emit('signal', remotePeerId, {offer})
+    // })
 
     rtcpc.addEventListener("iceconnectionstatechange", event => {
       console.debug('iceconnectionstatechange', rtcpc.iceConnectionState)
@@ -235,14 +240,17 @@ export class ConferenceCall extends LitElement {
     // dataChannel.onmessage = (({data}) => { console.debug('received', data)})
 
     // create and send local offer
-    // const offer = await rtcpc.createOffer()
-    // await rtcpc.setLocalDescription(offer)
-    // this.signaler.emit('signal', remotePeerId, {offer})
+    // This code IS necessary when NOT using the reneggotiation approach
+    // which, at the time of writing, does not work properly in Safari
+    // See notes by renegotiation listener
+    const offer = await rtcpc.createOffer()
+    await rtcpc.setLocalDescription(offer)
+    this.signaler.emit('signal', remotePeerId, {offer})
   }
 
-  _onClickConnect() {
+  async _onClickConnect() {
     this.canConnect = false
-    this._attachAV()
+    await this._attachAV()
     this._initSignaler();
   }
 
@@ -280,7 +288,11 @@ export class ConferenceCall extends LitElement {
           <input @change=${(e) => this.channel = e.target.value} .value="${this.channel}">
         </div>
         <button @click="${this._onClickConnect}" ?disabled=${!this.canConnect}>connect to socket.io</button>
-        ${Object.keys(this.peers).map(remotePeerId => html`<video muted playsinline autoplay id="${remotePeerId}"></video>`)}
+        <video-grid>
+          ${Object.keys(this.peers).map(remotePeerId => html`
+            <video muted playsinline autoplay id="${remotePeerId}" slot="video"></video>
+          `)}
+        </video-grid>
       </sp-theme>
     `;
   }
