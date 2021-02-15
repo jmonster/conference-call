@@ -2,8 +2,8 @@
   "version": "experimental",
   "tags": [
     {
-      "name": "my-element",
-      "path": "./my-element.js",
+      "name": "conference-call",
+      "path": "./conference-call.js",
       "description": "An example element.",
       "attributes": [
         {
@@ -49,8 +49,8 @@
       ]
     },
     {
-      "name": "my-element",
-      "path": "./docs-/my-element.bundled.js",
+      "name": "conference-call",
+      "path": "./docs-/conference-call.bundled.js",
       "attributes": [
         {
           "name": "name",

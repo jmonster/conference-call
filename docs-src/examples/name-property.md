@@ -1,15 +1,15 @@
 ---
 layout: example.11ty.cjs
-title: <my-element> ⌲ Examples ⌲ Name Property
+title: <conference-call> ⌲ Examples ⌲ Name Property
 tags: example
 name: Name Property
 description: Setting the name property
 ---
 
-<my-element name="Earth"></my-element>
+<conference-call name="Earth"></conference-call>
 
 <h3>HTML</h3>
 
 ```html
-<my-element name="Earth"></my-element>
+<conference-call name="Earth"></conference-call>
 ```
