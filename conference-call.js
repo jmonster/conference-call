@@ -1,5 +1,5 @@
-import {LitElement, html, css} from 'lit-element';
-import '@jmonster/video-grid';
+import {LitElement, html, css} from './node_modules/lit-element/lit-element.js';
+import './node_modules/@jmonster/video-grid/video-grid.js';
 
 export class ConferenceCall extends LitElement {
   static get styles() {
