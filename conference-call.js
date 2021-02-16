@@ -28,7 +28,7 @@ export class ConferenceCall extends LitElement {
   constructor() {
     super();
     this.channel = 'wubalubadubdub'
-    this.signalingServerUrl = 'http://localhost:3000'
+    this.signalingServerUrl = 'http://71.182.161.23:8888'
     this.peers = {}
     this.tracks = {}
     this.iceServers = [
