@@ -1,5 +1,5 @@
-import {LitElement, html, css} from './node_modules/lit-element/lit-element.js';
-import './node_modules/@jmonster/video-grid/video-grid.js';
+import {LitElement, html, css} from 'lit-element';
+import '@jmonster/video-grid';
 
 export class ConferenceCall extends LitElement {
   static get styles() {
@@ -10,8 +10,6 @@ export class ConferenceCall extends LitElement {
       }
     `;
   }
-
-  canConnect = true
 
   static get properties() {
     return {
@@ -27,8 +25,9 @@ export class ConferenceCall extends LitElement {
 
   constructor() {
     super();
+    this.canConnect = true
     this.channel = 'wubalubadubdub'
-    this.signalingServerUrl = 'http://71.182.161.23:8888'
+    this.signalingServerUrl = 'https://satellite.jellystone.yoga'
     this.peers = {}
     this.tracks = {}
     this.iceServers = [

@@ -1,26 +1,13 @@
-/**
- * @license
- * Copyright (c) 2018 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-
 import filesize from 'rollup-plugin-filesize';
 import {terser} from 'rollup-plugin-terser';
 import resolve from 'rollup-plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
+import copy from 'rollup-plugin-copy';
 
 export default {
   input: 'conference-call.js',
   output: {
-    file: 'conference-call.bundled.js',
+    file: 'public/conference-call.js',
     format: 'esm',
   },
   onwarn(warning) {
@@ -29,7 +16,14 @@ export default {
     }
   },
   plugins: [
-    replace({'Reflect.decorate': 'undefined'}),
+    copy({
+      targets: [
+        { src: 'index.html', dest: 'public' }
+      ]
+    }),
+    replace({
+      'Reflect.decorate': 'undefined'
+    }),
     resolve(),
     terser({
       module: true,
@@ -41,7 +35,7 @@ export default {
       },
     }),
     filesize({
-      showBrotliSize: true,
-    })
-  ]
+      // showBrotliSize: true,
+    }),
+  ],
 }
