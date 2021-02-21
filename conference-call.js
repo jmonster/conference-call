@@ -289,7 +289,7 @@ export class ConferenceCall extends LitElement {
         <button @click="${this._onClickConnect}" ?disabled=${!this.canConnect}>connect to socket.io</button>
         <video-grid>
           ${Object.keys(this.peers).map(remotePeerId => html`
-            <video muted playsinline autoplay id="${remotePeerId}" slot="video"></video>
+            <video playsinline autoplay id="${remotePeerId}" slot="video"></video>
           `)}
         </video-grid>
       </sp-theme>
