@@ -2,3 +2,5 @@
 
 # only generated for size check
 conference-call.bundled.js
+public/conference-call.js
+public/index.html
