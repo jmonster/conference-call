@@ -1,6 +1,6 @@
 import {LitElement, html, css} from 'lit-element';
 import './video-grid';
-import config from '../config.js'
+import config from './config.js'
 
 export class ConferenceCall extends LitElement {
   static get styles() {
