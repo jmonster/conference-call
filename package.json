@@ -32,10 +32,6 @@
   "author": "The Polymer Authors",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "@jmonster/video-grid": "github:jmonster/video-grid",
-    "@spectrum-web-components/button": "^0.11.2",
-    "@spectrum-web-components/button-group": "^0.5.2",
-    "@spectrum-web-components/theme": "^0.7.3",
     "lit-element": "^2.3.1",
     "rollup-plugin-copy": "^3.4.0",
     "socket.io-client": "^2.1.1"
