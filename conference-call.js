@@ -84,7 +84,9 @@ export class ConferenceCall extends LitElement {
           console.debug('received ANSWER')
           
           try {
-            if (!rtcpc) throw new Error('Unexpected missing rtcpc.. better dig in, dogg.')
+            if (!rtcpc) {
+              throw new Error('Unexpected missing rtcpc.. better dig in, dogg.')
+            }
 
             await rtcpc.setRemoteDescription(new RTCSessionDescription(answer));
           } catch(err) {
@@ -99,7 +101,9 @@ export class ConferenceCall extends LitElement {
 
           try {
             if (!rtcpc) {
-              throw new Error('Unexpected missing rtcpc.. better dig in, dogg.')
+              // this appears to happen when the signal serve delivers an old message, or something
+              console.debug('Received candidate for unknown peer', remotePeerId)
+              return false;
             }
 
             await rtcpc.addIceCandidate(candidate)
