@@ -228,7 +228,7 @@ export class ConferenceCall extends LitElement {
           console.log('dreaming of .restartIce()')
           rtcpc.reconnectRequested = true
 
-          _destroyRTCPC(remotePeerId, rtcpc)
+          this._destroyRTCPC(remotePeerId, rtcpc)
         }
       }
     };
