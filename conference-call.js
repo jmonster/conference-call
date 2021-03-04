@@ -52,6 +52,8 @@ export class ConferenceCall extends LitElement {
     this.signaler.on('connect', () => {
       console.debug('socket.io id', this.signaler.id)
       console.debug('socket.io channel', this.channel)
+
+      console.dir(this.peers)
       
       // - 'participants' is emitted to the newly connected user
       //   when they first join a channel
@@ -66,7 +68,7 @@ export class ConferenceCall extends LitElement {
 
         // OFFER
         if (offer) {
-          console.debug('received OFFER')
+          console.debug(remotePeerId, 'received OFFER')
 
           if (!rtcpc) rtcpc = this.peers[remotePeerId] = this._createRTCPC(remotePeerId);
 
@@ -81,7 +83,7 @@ export class ConferenceCall extends LitElement {
 
         // ANSWER
         if (answer) {
-          console.debug('received ANSWER')
+          console.debug(remotePeerId, 'received ANSWER')
           
           try {
             if (!rtcpc) {
@@ -97,7 +99,7 @@ export class ConferenceCall extends LitElement {
 
         // CANDIDATE
         if (candidate) {
-          console.debug('received CANDIDATE')
+          console.debug(remotePeerId, 'received CANDIDATE')
 
           try {
             if (!rtcpc) {
@@ -136,56 +138,39 @@ export class ConferenceCall extends LitElement {
       })
     }
 
-    rtcpc.addEventListener('icecandidate', ({candidate}) => {
+    rtcpc.onicecandidate = ({candidate}) => {
       if (candidate) {
         this.signaler.emit('signal', remotePeerId, {candidate})
       }
-    });
+    }
 
-    rtcpc.addEventListener('icegatheringstatechange', () => {
-      console.debug('icegatheringstatechange')
-    })
+    rtcpc.onicecandidateerror = (err) => {
+      console.error(remotePeerId,'icecandidateerror', err)
+    }
 
-    rtcpc.addEventListener('icecandidateerror', (err) => {
-      console.error('icecandidateerror', err)
-    })
-
-    rtcpc.addEventListener('connectionstatechange', event => {
-      console.debug(rtcpc.connectionState, 'rtcpc.connectionState')
+    rtcpc.onconnectionstatechange = async (event) => {
+      console.debug(remotePeerId, 'rtcpc.connectionState', rtcpc.connectionState)
       
       switch(rtcpc.connectionState) {
         case "new":
-        case "checking":
-          // setOnlineStatus("Connecting...");
+        case "checking": // connecting...
           break;
-        case "connected":
-          // setOnlineStatus("Online");
+        case "connected": // online
           break;
-        case "disconnected":
-          delete this.peers[remotePeerId]
-          delete this.tracks[remotePeerId]
+        case "disconnected": // disconnecting...
+        case "closed": // offline
+        case "failed": // error
+          this._destroyRTCPC(remotePeerId, rtcpc)
           this.requestUpdate() // render changes to this.peers
-          // setOnlineStatus("Disconnecting...");
+          if (rtcpc.reconnectRequested) this._connectToPeer(remotePeerId)
           break;
-        case "closed":
-          delete this.peers[remotePeerId]
-          delete this.tracks[remotePeerId]
-          this.requestUpdate() // render changes to this.peers
-          // setOnlineStatus("Offline");
-          break;
-        case "failed":
-          delete this.peers[remotePeerId]
-          delete this.tracks[remotePeerId]
-          this.requestUpdate() // render changes to this.peers
-          // setOnlineStatus("Error");
-          break;
-        default:
-          // setOnlineStatus("Unknown");
+        default: // unknown
           break;
       }
-    });
+    };
 
-    rtcpc.addEventListener('track', ({track}) => {
+    // rtcpc.addEventListener('track', ({track}) => {
+    rtcpc.ontrack = ({track}) => {
       // initialize to [] or fetch existing array
       const tracks = this.tracks[remotePeerId] = this.tracks[remotePeerId] || []
 
@@ -198,15 +183,16 @@ export class ConferenceCall extends LitElement {
 
       // update UI to reflect changes to `this.tracks`
       this.requestUpdate()
-    });
+    };
 
-    rtcpc.addEventListener('datachannel', ({channel}) => {
+    // rtcpc.addEventListener('datachannel', ({channel}) => {
+    rtcpc.ondatachannel = ({channel}) => {
       channel.addEventListener('open', () => console.debug(remotePeerId, 'datachannel open'))
       channel.addEventListener('message', ({data}) => console.info(remotePeerId, data))
       channel.addEventListener('closing', () => console.debug(remotePeerId, 'datachannel closing'))
       channel.addEventListener('close', () => console.debug(remotePeerId, 'datachannel close'))
       channel.addEventListener('error', (err) => console.error(remotePeerId, err))
-    });
+    };
 
     //
     // This approach does NOT work with Safari
@@ -223,8 +209,9 @@ export class ConferenceCall extends LitElement {
     //   this.signaler.emit('signal', remotePeerId, {offer})
     // })
 
-    rtcpc.addEventListener("iceconnectionstatechange", event => {
-      console.debug('iceconnectionstatechange', rtcpc.iceConnectionState)
+    // rtcpc.addEventListener("iceconnectionstatechange", async (event) => {
+    rtcpc.oniceconnectionstatechange = async (event) => {
+      console.debug(remotePeerId, rtcpc.iceConnectionState, 'iceconnectionstatechange')
 
       if (rtcpc.iceConnectionState === "failed") {
         /* possibly reconfigure the connection in some way here */
@@ -233,27 +220,46 @@ export class ConferenceCall extends LitElement {
         if (rtcpc.restartIce) {
           rtcpc.restartIce()
         } else {
-          // TODO implement this sample code
-          // and be sure to verify what happens when an offer is sent
-          // that was previously established
-          // rtcpc.createOffer({ iceRestart: true })
-          // .then(rtcpc.setLocalDescription)
-          // .then(sendOfferToServer);
+          // this doesn't work with Safari (as is, at least)
+          // const offer = await rtcpc.createOffer({iceRestart: true})
+          // await rtcpc.setLocalDescription(offer)
+          // this.signaler.emit('signal', remotePeerId, {offer})
+
+          console.log('dreaming of .restartIce()')
+          rtcpc.reconnectRequested = true
+
+          _destroyRTCPC(remotePeerId, rtcpc)
         }
       }
-    });
+    };
 
     return rtcpc;
   }
 
+  _destroyRTCPC(remotePeerId, rtcpc) {
+    rtcpc.close()
+
+    delete this.peers[remotePeerId]
+    delete this.tracks[remotePeerId]
+
+    delete rtcpc.onconnectionstatechange
+    delete rtcpc.oniceconnectionstatechange
+    delete rtcpc.onicecandidateerror
+    delete rtcpc.onicecandidate
+    delete rtcpc.ontrack
+    delete rtcpc.ondatachannel
+  }
+
   async _connectToPeer(remotePeerId) {
-    if (this.peers[remotePeerId]) {
+    let rtcpc = this.peers[remotePeerId]
+
+    if (rtcpc) {
       console.error(`Already connected to ${this.peers[remotePeerId]}; aborting call _connectToPeer`)
       return
     }
 
     // create new peer connection
-    const rtcpc = this.peers[remotePeerId] = this._createRTCPC(remotePeerId)
+    rtcpc = this.peers[remotePeerId] = this._createRTCPC(remotePeerId)
 
     this.requestUpdate() // render changes to this.peers
 
@@ -303,7 +309,11 @@ export class ConferenceCall extends LitElement {
 
   render() {
     return html`
-        <button @click="${this._onClickConnect}" ?disabled=${!this.canConnect}>connect to socket.io</button>
+        ${this.canConnect
+          ? html`<button @click="${this._onClickConnect}" ?disabled=${!this.canConnect} style="font-size:3rem; background-color: greenyellow; padding: 42px;">connect to socket.io</button>`
+          : html``
+        }
+        
         <video-grid>
           ${Object.keys(this.peers).map(remotePeerId => html`
             <video playsinline autoplay id="${remotePeerId}" slot="video"></video>
